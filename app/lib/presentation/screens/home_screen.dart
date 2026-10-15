@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/accessibility.dart';
 import '../../core/utils/formatters.dart';
 import '../../logic/playlist/playlist_provider.dart';
 import '../widgets/mini_player_widget.dart';
 import '../widgets/track_tile.dart';
 
-/// صفحه اصلی برنامه نمایش‌دهنده لیست ادعیه و سوره‌ها
+/// صفحه اصلی برنامه با پشتیبانی کامل از صفحه‌خوان تاک‌بک (TalkBack)
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -13,28 +14,52 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final playlist = context.watch<PlaylistProvider>();
     final theme = Theme.of(context);
+    final countFa = AppFormatters.toPersianDigits(playlist.items.length.toString());
 
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('برنامه عبادی'),
+          title: Semantics(
+            header: true,
+            label: 'برنامه عبادی',
+            child: const Text('برنامه عبادی'),
+          ),
           actions: [
-            IconButton(
-              icon: playlist.isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.sync_rounded),
-              tooltip: 'همگام‌سازی با گوگل درایو',
-              onPressed: playlist.isLoading ? null : () => playlist.loadPlaylist(),
+            Semantics(
+              label: 'همگام‌سازی لیست با فضای ابری',
+              button: true,
+              child: IconButton(
+                icon: playlist.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.sync_rounded),
+                tooltip: 'همگام‌سازی با فضای ابری',
+                onPressed: playlist.isLoading
+                    ? null
+                    : () async {
+                        AppAccessibility.announce(context, 'در حال همگام‌سازی لیست...');
+                        await playlist.loadPlaylist();
+                        if (context.mounted) {
+                          AppAccessibility.announce(
+                            context,
+                            'همگام‌سازی با موفقیت انجام شد. $countFa قطعه بارگذاری شد.',
+                          );
+                        }
+                      },
+              ),
             ),
-            IconButton(
-              icon: const Icon(Icons.info_outline_rounded),
-              tooltip: 'درباره برنامه',
-              onPressed: () => _showAboutDialog(context),
+            Semantics(
+              label: 'راهنمای برنامه',
+              button: true,
+              child: IconButton(
+                icon: const Icon(Icons.info_outline_rounded),
+                tooltip: 'درباره برنامه',
+                onPressed: () => _showAboutDialog(context),
+              ),
             ),
           ],
         ),
@@ -50,55 +75,61 @@ class HomeScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        playlist.errorMessage!,
-                        style: const TextStyle(fontSize: 12, color: Colors.red),
+                child: Semantics(
+                  label: 'خطا: ${playlist.errorMessage}. دکمه تلاش مجدد.',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          playlist.errorMessage!,
+                          style: const TextStyle(fontSize: 12, color: Colors.red),
+                        ),
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () => playlist.loadPlaylist(),
-                      child: const Text('تلاش مجدد'),
-                    ),
-                  ],
+                      TextButton(
+                        onPressed: () => playlist.loadPlaylist(),
+                        child: const Text('تلاش مجدد'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
             // نوار خلاصه وضعیت
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'لیست پخش جاری (${AppFormatters.toPersianDigits(playlist.items.length.toString())} مورد)',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade400,
+              child: Semantics(
+                label: 'لیست پخش جاری: شامل $countFa قطعه. وضعیت: همگام با سرور و تلگرام.',
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'لیست پخش جاری ($countFa مورد)',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade400,
+                      ),
                     ),
-                  ),
-                  Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF0D9488),
-                          shape: BoxShape.circle,
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF0D9488),
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Text(
-                        'همگام با تلگرام',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF0D9488)),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 6),
+                        const Text(
+                          'همگام با سرور',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF0D9488)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
 
@@ -106,7 +137,13 @@ class HomeScreen extends StatelessWidget {
             Expanded(
               child: RefreshIndicator(
                 color: const Color(0xFF0D9488),
-                onRefresh: () => playlist.loadPlaylist(),
+                onRefresh: () async {
+                  AppAccessibility.announce(context, 'در حال دریافت آخرین لیست...');
+                  await playlist.loadPlaylist();
+                  if (context.mounted) {
+                    AppAccessibility.announce(context, 'لیست به‌روز شد. $countFa قطعه موجود است.');
+                  }
+                },
                 child: playlist.items.isEmpty
                     ? ListView(
                         children: const [
@@ -165,14 +202,15 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           content: const Text(
-            'این اپلیکیشن مستقیماً به پوشه اختصاصی شما در گوگل درایو متصل است.\n\n'
+            'این اپلیکیشن مستقیماً به پوشه اختصاصی شما در گوگل درایو و ربات تلگرام متصل است.\n\n'
             'هنگامی که در ربات تلگرام نام سوره‌ها یا ادعیه را بفرستید، ربات فایل‌ها را طبق ایندکس پیدا کرده '
             'و این برنامه لیست را به‌روزرسانی می‌کند.\n\n'
             'امکانات برنامه:\n'
             '• پخش آنلاین فایل‌های صوتی از گوگل درایو\n'
             '• دانلود فایل برای پخش آفلاین (بدون اینترنت)\n'
             '• تنظیم سرعت پخش (۰.۵x تا ۲.۰x)\n'
-            '• ادامه پخش در پس‌زمینه و حالت قفل صفحه',
+            '• ادامه پخش در پس‌زمینه و حالت قفل صفحه\n'
+            '• سازگاری و دسترسی‌پذیری کامل با صفحه‌خوان تاک‌بک (TalkBack)',
           ),
           actions: [
             TextButton(

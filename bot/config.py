@@ -22,3 +22,7 @@ class Config:
 
     # مسیر فایل احراز هویت Service Account
     SERVICE_ACCOUNT_FILE = str(BASE_DIR / os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "service_account.json"))
+
+    # تنظیمات همگام‌سازی ابری گیت‌هاب برای دسترسی اپلیکیشن
+    GITHUB_REPO = os.getenv("GITHUB_REPO", "blind-genius/worship_player").strip()
+    GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()

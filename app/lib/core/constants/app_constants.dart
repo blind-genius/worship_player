@@ -5,6 +5,10 @@ class AppConstants {
   // شناسه پوشه اصلی worship در گوگل درایو
   static const String googleDriveFolderId = '1wPcJ84M0WiRIn85mbYaaVsu11rdMALA9';
 
+  // آدرس ابری مستقیم فایل playlist.json همگام‌شده با ربات تلگرام
+  static const String playlistRemoteUrl =
+      'https://raw.githubusercontent.com/blind-genius/worship_player/main/playlist.json';
+
   // ساخت لینک مستقیم استریم یا دانلود بر اساس شناسه فایل در گوگل درایو
   static String getDriveDownloadUrl(String fileId) {
     return 'https://drive.google.com/uc?export=download&id=$fileId';

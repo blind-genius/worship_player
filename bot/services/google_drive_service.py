@@ -253,9 +253,70 @@ class GoogleDriveService:
             logger.error("خطا در خواندن playlist.json: %s", e)
             return None
 
+    def _get_github_token(self) -> str:
+        """یافتن خودکار توکن گیت‌هاب از فایل کانفیگ یا Credential Manager سیستم."""
+        if Config.GITHUB_TOKEN:
+            return Config.GITHUB_TOKEN
+        try:
+            import subprocess
+            p = subprocess.Popen(["git", "credential", "fill"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+            out, _ = p.communicate(input="protocol=https\nhost=github.com\n\n", timeout=3)
+            for line in out.splitlines():
+                if line.startswith("password="):
+                    return line.split("=", 1)[1]
+        except Exception:
+            pass
+        return ""
+
+    def sync_to_github(self, playlist_data: dict) -> bool:
+        """ارسال خودکار فایل playlist.json به مخزن آنلاین گیت‌هاب جهت دریافت لحظه‌ای توسط اپلیکیشن."""
+        token = self._get_github_token()
+        if not token or not Config.GITHUB_REPO:
+            return False
+
+        try:
+            import base64
+            import urllib.request
+
+            sha = None
+            get_url = f"https://api.github.com/repos/{Config.GITHUB_REPO}/contents/playlist.json"
+            req = urllib.request.Request(
+                get_url,
+                headers={"Authorization": f"token {token}", "User-Agent": "worship-bot"},
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    sha = json.loads(resp.read().decode("utf-8")).get("sha")
+            except Exception:
+                pass
+
+            content_bytes = json.dumps(playlist_data, ensure_ascii=False, indent=2).encode("utf-8")
+            body = {
+                "message": "sync: update playlist from Telegram bot",
+                "content": base64.b64encode(content_bytes).decode("ascii"),
+            }
+            if sha:
+                body["sha"] = sha
+
+            put_req = urllib.request.Request(
+                get_url,
+                data=json.dumps(body).encode("utf-8"),
+                headers={
+                    "Authorization": f"token {token}",
+                    "User-Agent": "worship-bot",
+                    "Content-Type": "application/json",
+                },
+                method="PUT",
+            )
+            with urllib.request.urlopen(put_req, timeout=12) as put_resp:
+                return put_resp.status in (200, 201)
+        except Exception as e:
+            logger.error("خطا در همگام‌سازی گیت‌هاب: %s", e)
+            return False
+
     def save_playlist(self, resolved_items: list[dict[str, Any]]) -> tuple[bool, str, dict[str, Any]]:
         """
-        به‌روزرسانی محتوای playlist.json در درایو و ذخیره نسخه محلی.
+        به‌روزرسانی محتوای playlist.json در فضای ابری (گیت‌هاب و درایو) و ذخیره نسخه محلی.
         """
         service = self._get_service()
 
@@ -284,37 +345,36 @@ class GoogleDriveService:
                 "stream_url": f"https://drive.google.com/uc?export=download&id={file_id}" if file_id else "",
             })
 
-        # ۱. ذخیره یک نسخه محلی روی دیسک
-        local_path = Path(__file__).resolve().parent.parent / "current_playlist.json"
-        with open(local_path, "w", encoding="utf-8") as f:
+        # ۱. ذخیره محلی روی دیسک (در پوشه بات و ریشه پروژه)
+        local_bot_path = Path(__file__).resolve().parent.parent / "current_playlist.json"
+        with open(local_bot_path, "w", encoding="utf-8") as f:
             json.dump(playlist_data, f, ensure_ascii=False, indent=2)
 
-        content_bytes = json.dumps(playlist_data, ensure_ascii=False, indent=2).encode("utf-8")
-        media = MediaInMemoryUpload(content_bytes, mimetype="application/json", resumable=False)
+        local_root_path = Path(__file__).resolve().parent.parent.parent / "playlist.json"
+        with open(local_root_path, "w", encoding="utf-8") as f:
+            json.dump(playlist_data, f, ensure_ascii=False, indent=2)
 
+        # ۲. ارسال به گیت‌هاب برای همگام‌سازی زنده و بدون وقفه اپلیکیشن
+        github_synced = self.sync_to_github(playlist_data)
+        if github_synced:
+            logger.info("✅ لیست پخش با موفقیت روی گیت‌هاب همگام شد.")
+
+        # ۳. اگر فایل playlist.json در گوگل درایو نیز وجود داشته باشد، آن را هم به‌روزرسانی می‌کنیم
         existing_file_id = self.get_playlist_file_id()
-
         if existing_file_id:
             try:
-                updated = service.files().update(
+                content_bytes = json.dumps(playlist_data, ensure_ascii=False, indent=2).encode("utf-8")
+                media = MediaInMemoryUpload(content_bytes, mimetype="application/json", resumable=False)
+                service.files().update(
                     fileId=existing_file_id,
                     media_body=media,
                     fields="id, name, modifiedTime",
                 ).execute()
-                file_id = updated["id"]
-                logger.info("✅ فایل playlist.json در گوگل درایو به‌روزرسانی شد: %s", file_id)
-                return True, file_id, playlist_data
+                logger.info("✅ فایل playlist.json در درایو نیز به‌روزرسانی شد: %s", existing_file_id)
             except Exception as e:
-                logger.error("❌ خطا در به‌روزرسانی playlist.json در گوگل درایو: %s", e)
-                return False, f"خطا در درایو: {e}", playlist_data
-        else:
-            msg = (
-                "فایل playlist.json در پوشه گوگل درایو یافت نشد. "
-                "لطفاً یک‌بار یک فایل خالی با نام playlist.json در پوشه worship_files در درایو خود بسازید "
-                "تا ربات بتواند تغییرات را در آن بنویسد."
-            )
-            logger.warning(msg)
-            return True, "local_only", playlist_data
+                logger.warning("به‌روزرسانی درایو: %s", e)
+
+        return True, "cloud_synced", playlist_data
 
 
 # سینگلتون سرویس

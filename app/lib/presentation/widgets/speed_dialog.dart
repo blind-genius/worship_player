@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/formatters.dart';
 
-/// دیالوگ انتخاب سرعت پخش صوت
+/// دیالوگ انتخاب سرعت پخش صوت با پشتیبانی کامل از صفحه‌خوان تاک‌بک (TalkBack)
 class SpeedSelectorDialog extends StatelessWidget {
   final double currentSpeed;
   final ValueChanged<double> onSpeedSelected;
@@ -41,17 +41,21 @@ class SpeedSelectorDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.speed_rounded, color: Color(0xFF0D9488)),
-                const SizedBox(width: 8),
-                Text(
-                  'سرعت پخش',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
+            Semantics(
+              header: true,
+              label: 'انتخاب سرعت پخش صوت',
+              child: Row(
+                children: [
+                  const Icon(Icons.speed_rounded, color: Color(0xFF0D9488)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'سرعت پخش',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -63,19 +67,28 @@ class SpeedSelectorDialog extends StatelessWidget {
                     ? '۱.۰x (عادی)'
                     : '${AppFormatters.toPersianDigits(speed.toString())}x';
 
-                return ChoiceChip(
-                  label: Text(label),
+                final semanticText = isSelected
+                    ? 'سرعت $label، انتخاب شده است.'
+                    : 'سرعت $label، برای انتخاب دو بار ضربه بزنید.';
+
+                return Semantics(
+                  label: semanticText,
+                  button: true,
                   selected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      onSpeedSelected(speed);
-                      Navigator.pop(context);
-                    }
-                  },
-                  selectedColor: const Color(0xFF0D9488),
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : null,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  child: ChoiceChip(
+                    label: Text(label),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        onSpeedSelected(speed);
+                        Navigator.pop(context);
+                      }
+                    },
+                    selectedColor: const Color(0xFF0D9488),
+                    labelStyle: TextStyle(
+                      color: isSelected ? Colors.white : null,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
                   ),
                 );
               }).toList(),
