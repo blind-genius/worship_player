@@ -1,19 +1,41 @@
 {
   "version": 1,
-  "updated_at": "2026-10-15T03:39:34.039503+00:00",
+  "updated_at": "2026-10-15T04:27:55.878946+00:00",
   "title": "برنامه عبادی",
-  "count": 1,
+  "count": 3,
   "items": [
     {
       "id": "1",
       "position": 1,
-      "title": "جزء 30",
-      "file_name": "30.mp3",
+      "title": "سوره یاسین",
+      "file_name": "036.mp3",
       "folder": "quran",
-      "drive_file_id": "1WglYv7G-xHtXCYrFi_RXs_GCeWy_T-Jl",
-      "size_bytes": 8662216,
+      "drive_file_id": "19Q_oK7V6yg_-SYwTyJiun4rMA3rAFf6H",
+      "size_bytes": 5602543,
       "has_audio": true,
-      "stream_url": "https://drive.google.com/uc?export=download&id=1WglYv7G-xHtXCYrFi_RXs_GCeWy_T-Jl"
+      "stream_url": "https://drive.google.com/uc?export=download&id=19Q_oK7V6yg_-SYwTyJiun4rMA3rAFf6H"
+    },
+    {
+      "id": "2",
+      "position": 2,
+      "title": "سوره لقمان",
+      "file_name": "031.mp3",
+      "folder": "quran",
+      "drive_file_id": "1MCKgXLgQk2J-fd7JgbwZ_rDdPtiiJfDt",
+      "size_bytes": 4226412,
+      "has_audio": true,
+      "stream_url": "https://drive.google.com/uc?export=download&id=1MCKgXLgQk2J-fd7JgbwZ_rDdPtiiJfDt"
+    },
+    {
+      "id": "3",
+      "position": 3,
+      "title": "سوره جن",
+      "file_name": "072.mp3",
+      "folder": "quran",
+      "drive_file_id": "1_P3IrUtQuO63vFEEdCwvk8vYzWB2RhVG",
+      "size_bytes": 2282486,
+      "has_audio": true,
+      "stream_url": "https://drive.google.com/uc?export=download&id=1_P3IrUtQuO63vFEEdCwvk8vYzWB2RhVG"
     }
   ]
 }
