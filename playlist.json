@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "updated_at": "2026-10-15T03:39:34.039503+00:00",
+  "title": "برنامه عبادی",
+  "count": 1,
+  "items": [
+    {
+      "id": "1",
+      "position": 1,
+      "title": "جزء 30",
+      "file_name": "30.mp3",
+      "folder": "quran",
+      "drive_file_id": "1WglYv7G-xHtXCYrFi_RXs_GCeWy_T-Jl",
+      "size_bytes": 8662216,
+      "has_audio": true,
+      "stream_url": "https://drive.google.com/uc?export=download&id=1WglYv7G-xHtXCYrFi_RXs_GCeWy_T-Jl"
+    }
+  ]
+}
